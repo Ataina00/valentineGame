@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Pingouins Valentin</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <style>
+    /* (Style inchangé ici) */
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+    }
+    .animation-container {
+      width: 100%;
+      height: 70%;
+      background-color: #FFD1DC;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .history-container {
+      width: 100%;
+      height: 30%;
+      background-color: #ad1328;
+      color: white;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+    }
+    .chat-history {
+      flex-grow: 1;
+      overflow-y: auto;
+      margin-bottom: 20px;
+      font-family: 'Georgia', serif;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .chat-message {
+      margin: 15px 0;
+      padding: 12px;
+      border-radius: 5px;
+      background-color: #222;
+    }
+    .narration {
+      color: #e6e6e6;
+      font-style: italic;
+    }
+    .dialogue {
+      color: #ff69b4;
+      margin-left: 20px;
+      font-family: 'Arial', sans-serif;
+      border-left: 3px solid #ff69b4;
+      padding-left: 15px;
+    }
+    .input-area {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      background-color: #333;
+      border-radius: 5px;
+      padding: 8px;
+      gap: 8px;
+    }
+    .input-area textarea {
+      width: 200px;
+      height: 36px;
+      padding: 8px;
+      border: none;
+      border-radius: 5px;
+      background-color: #444;
+      color: white;
+      resize: none;
+      font-family: 'Arial', sans-serif;
+      line-height: 20px;
+      vertical-align: middle;
+    }
+    .input-area button {
+      display: inline-flex;
+      align-items: center;
+      height: 36px;
+      padding: 0 16px;
+      background-color: #ff69b4;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: 'Georgia', serif;
+      font-size: 16px;
+      white-space: nowrap;
+      vertical-align: middle;
+      margin-left: 20px;
+    }
+    .button-area {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .choice-button {
+      padding: 8px 16px;
+      background-color: #ff69b4;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: 'Georgia', serif;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      
+    }
+    .choice-button:hover {
+      background-color: #ff1493;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="animation-container" id="animation-container"></div>
+  <div class="history-container">
+    <div class="chat-history" id="chat-history"></div>
+    <div class="input-area" id="input-area" style="display: none;">
+      <textarea placeholder="Entrez votre prénom..." id="chat-input"></textarea>
+      <button id="validate-button" onclick="onValidate()">Révéler mon prénom</button>
+    </div>
+    <div class="button-area" id="choice-buttons" style="display: none;">
+      <button class="choice-button" onclick="handleChoice('oui')">OUI</button>
+      <button class="choice-button" onclick="handleChoice('non')">NON</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // --- Tableau du pingouin ---
+  const penguinShapeT = [
+    [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,1, 1,1,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,0,0,0, 1,1,3,3, 3,3,1,1, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,0,0,1, 3,3,4,4, 4,4,3,3, 1,0,0,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,0,1,3, 4,4,4,4, 4,4,4,4, 3,1,0,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,0,1,4, 2,2,4,4, 4,4,2,2, 4,1,0,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,1,4,2, 2,2,2,4, 4,2,2,2, 2,4,1,0, 0,0,0,0, 0,0,0,0],
+    
+    [0,0,0,0, 0,0,0,0, 0,1,4,2, 2,4,2,2, 2,2,4,2, 2,4,1,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,1,4,2, 2,4,2,2, 2,2,4,2, 2,4,1,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,1,4,4, 2,5,5,5, 5,5,5,2, 4,4,1,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,1,4,4, 2,2,5,5, 5,5,2,2, 4,4,1,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 1,4,4,4, 4,2,2,5, 5,2,2,4, 4,4,4,1, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 1,4,4,4, 4,2,2,2, 2,2,2,4, 4,4,4,1, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,1, 3,4,4,4, 2,2,2,2, 2,2,2,2, 4,4,4,3, 1,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,1,3, 4,4,4,2, 2,2,2,2, 2,2,2,2, 2,4,4,4, 3,1,0,0, 0,0,0,0],
+    
+    [0,0,0,0, 0,1,3,4, 4,4,4,2, 2,2,2,2, 2,2,2,2, 2,4,4,4, 4,3,1,0, 0,0,0,0],
+    [0,0,0,0, 1,3,4,4, 4,4,2,2, 2,2,2,2, 2,2,2,2, 2,2,4,4, 4,4,3,1, 0,0,0,0],
+    [0,0,0,1, 3,4,4,4, 4,4,2,2, 2,2,2,2, 2,2,2,2, 2,2,4,4, 4,4,4,3, 1,0,0,0],
+    [0,0,1,3, 4,4,1,4, 4,4,2,2, 2,2,2,2, 2,2,2,2, 2,2,4,4, 4,1,4,4, 3,1,0,0],
+    [0,0,1,4, 4,1,0,1, 4,4,2,2, 2,2,2,2, 2,2,2,2, 2,2,4,4, 1,0,1,4, 4,1,0,0],
+    [0,0,1,4, 1,0,0,1, 4,4,2,2, 2,2,2,2, 2,2,2,2, 2,2,4,4, 1,0,0,1, 4,1,0,0],
+    [0,0,1,1, 0,0,0,1, 4,4,2,2, 2,2,2,2, 2,2,2,2, 2,2,4,4, 1,0,0,0, 1,1,0,0],
+    [0,0,0,0, 0,0,0,1, 4,4,4,2, 2,2,2,2, 2,2,2,2, 2,4,4,4, 1,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 1,4,4,2, 2,2,2,2, 2,2,2,2, 2,4,4,1, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 1,4,4,4, 2,2,2,2, 2,2,2,2, 4,4,4,1, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,1,4,4, 4,2,2,2, 2,2,2,4, 4,4,1,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,0,1,4, 4,4,2,2, 2,2,4,4, 4,1,0,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,1,1,4, 4,4,4,4, 4,4,4,4, 4,1,1,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 1,5,5,5, 5,5,4,4, 4,4,5,5, 5,5,5,1, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,1, 5,5,5,5, 5,5,1,1, 1,1,5,5, 5,5,5,5, 1,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,1, 1,1,1,1, 1,1,1,0, 0,1,1,1, 1,1,1,1, 1,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
+  ];
+
+  // --- CONSTANTES DES MESSAGES ---
+  const DIALOGUES = {
+    FIRST_QUESTION: "Veux-tu être ma valentine ?",
+    SECOND_QUESTION: "Peut-être, mais d'abord dis-moi qui es-tu ?",
+    MUIN_FIRST: "Je veux bien être ta valentine ... Mais j'ai une condition... Que tu viennes au MUIN avec moi ... Acceptes-tu de venir au muin avec moi ? 🥺",
+    MUIN_QUESTION: "En es-tu certain ? J'ai vraiment envie que tu sois là...",
+    POSITIVE_RESPONSE: "OUIII !!!! Je serais ravie d'être ta valentine ! Hâte de te voir samedi !",
+    NEGATIVE_RESPONSE: "Ohhh je suis déçue ! Dans ce cas, je refuse d'être ta valentine 😤 ! Je vais bouder !",
+    SEXY_QUESTION: "Ouhh un inconnu, que c'est excitant ! Je serai ta valentine à une seule condition. Est-ce que tu es sexy ?",
+    SEXY_POSITIVE: "Bien sûr que je serai ta valentine 👀",
+    SEXY_NEGATIVE: "Désolé, je n'aime que les personnes sexys.",
+    VALENTIN_QUESTION: "Je veux bien être ta valentine.... Mais quel Valentin es-tu, Valentin G ou Valentin N ?",
+    VALENTIN_QUESTION_2: "Pour que je puisse savoir, répondez à la question quel est le dernier film que j'ai regardé ?",
+    VALENTIN_G: "Bien sûr que je serais ta valentine cette année Val... ! C'est ton jour après tout !",
+    VALENTIN_N: "Ohhh c'est toi V, ravie que tu fasses ce jeu. Malheureusement je ne peux pas être ta valentine cette année.",
+    VALENTIN_N_JOKE: "Non je rigole bestfriend ! Je serai ravie d'être valentine !\nPS : Est-ce que tu as pensé : 'C'est donc ça qu'elle fait au lieu de répondre à mes messages' ?",
+    LOUIS: "Bien sûr que je veux bien être ta valentine ... à condition que tu ne nous mettes pas un plan pour samedi xD",
+    LYDIE: "Bien sûr, amour de ma vie. Même si je suis à distance, je te souhaite une excellente Saint-Valentin"
+  };
+
+  // --- VARIABLES GLOBALES ---
+  let step = 1;
+  let stepTimer = 0;
+  let pingouin1X, pingouin2X;
+  let pingouinY = 100;
+  let userName = "";
+  let userAnswer = "";
+  let heartX, heartY, heartSize = 20;
+  let heartGrowing = false;
+  let heartBroken = false;
+  let confettis = [];
+  let cnv;
+  let nonCount = 0;
+  let currentQuestion = '';  
+  let currentBubbleText = '';
+  let leftBubbleText = '';
+
+  const finalPos1 = 70;
+  const finalPos2 = 410;
+
+  // --- SETUP P5.JS ---
+  function setup() {
+    const container = document.getElementById('animation-container');
+    cnv = createCanvas(800, 500);
+    let x = (window.innerWidth - width) / 2;
+    if (x < 0) x = 0;
+    cnv.position(x, 0);
+    
+    textAlign(CENTER, CENTER);
+    textWrap(WORD);
+    noStroke();
+
+    // On initialise les positions des pingouins
+    pingouin1X = -320;
+    pingouin2X = width + 50;
+    
+    heartX = width / 2;
+    // === MODIFICATION ICI : le cœur commence plus bas ===
+    heartY = height / 2 + 20;
+    
+    addToHistory("Le jour de la Saint-Valentin, 2 pingouins se rencontrèrent...", 'narration');
+  }
+
+  // --- FONCTION DE DESSIN DES BULLES (avec word-wrap) ---
+  function drawSpeechBubble(x, y, w, h, txt) {
+  textSize(14);
+
+  // Word-wrap manuel
+  let words = txt.split(" ");
+  let lines = [];
+  let currentLine = "";
+  for (let word of words) {
+    let testLine = currentLine ? currentLine + " " + word : word;
+    if (textWidth(testLine) > (w - 20)) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  }
+  if (currentLine) lines.push(currentLine);
+
+  let finalHeight = Math.max(h, lines.length * 20 + 20);
+
+  // On calcule la position gauche de la bulle en fonction de x = centre
+  let bubbleX = x - w / 2;  
+  // y reste tel quel, on place le haut de la bulle à y
+
+  // Dessin du rectangle
+  fill(255);
+  stroke(0);
+  strokeWeight(2);
+  rect(bubbleX, y, w, finalHeight, 10);
+
+  // Dessin du texte, centré
+  noStroke();
+  fill(0);
+  textAlign(CENTER, CENTER);
+
+  // Calcul pour centrer verticalement
+  let txtY = y + finalHeight / 2 - (lines.length - 1) * 10;
+  for (let l of lines) {
+    text(l, bubbleX + w / 2, txtY);
+    txtY += 20;
+  }
+}
+
+
+
+  // --- FONCTION POUR AJOUTER UN MESSAGE DANS L'HISTORIQUE ---
+  function addToHistory(message, type = 'narration') {
+    const historyDiv = document.getElementById('chat-history');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${type}`;
+    messageDiv.textContent = message;
+    historyDiv.appendChild(messageDiv);
+    historyDiv.scrollTop = historyDiv.scrollHeight;
+  }
+
+  // --- GESTION DE LA SÉQUENCE SPÉCIALE ---
+  function handleSpecialCase(name) {
+    const lowerName = name.toLowerCase();
+    if (lowerName === 'amelie' || lowerName === 'amélie' || lowerName === 'thomas') {
+      return {
+        question: DIALOGUES.MUIN_FIRST,
+        type: 'muin'
+      };
+    } else if (lowerName === 'valentin') {
+      return {
+        question: DIALOGUES.VALENTIN_QUESTION,
+        type: 'valentin'
+      };
+    } else if (lowerName === 'louis') {
+      return {
+        response: DIALOGUES.LOUIS,
+        type: 'direct'
+      };
+    } else if (lowerName === 'lydie') {
+      return {
+        response: DIALOGUES.LYDIE,
+        type: 'direct'
+      };
+    } else if (lowerName === 'taina' || lowerName === 'taïna') {
+      return {
+        response: DIALOGUES.POSITIVE_RESPONSE,
+        type: 'direct'
+      };
+    } else {
+      return {
+        question: DIALOGUES.SEXY_QUESTION,
+        type: 'unknown'
+      };
+    }
+  }
+
+  function handleChoice(choice) {
+    const buttons = document.getElementById('choice-buttons');
+    buttons.style.display = 'none';
+
+    if (currentQuestion === 'muin')
+      if (choice === 'non') {
+        currentBubbleText = DIALOGUES.MUIN_QUESTION;
+        addToHistory(currentBubbleText, 'dialogue');
+        currentQuestion = 'muin-confirmation';
+        setTimeout(() => {
+          const yesBtn = document.querySelector('.choice-button:first-child');
+          const noBtn = document.querySelector('.choice-button:last-child');
+          yesBtn.textContent = 'Oui';
+          noBtn.textContent = "Non, finalement j'ai envie d'être là";
+          buttons.style.display = 'inline-flex';
+        }, 1000);
+      } else {
+        currentBubbleText = DIALOGUES.POSITIVE_RESPONSE;
+        addToHistory(currentBubbleText, 'dialogue');
+        heartGrowing = true;
+        step = 6;
+      }
+    else if (currentQuestion === 'muin-confirmation')
+      if (choice === 'oui') {
+        nonCount++;
+        if (nonCount >= 5) {
+          currentBubbleText = DIALOGUES.NEGATIVE_RESPONSE;
+          addToHistory(currentBubbleText, 'dialogue');
+          heartBroken = true;
+          step = 6;
+        } else {
+          currentBubbleText = DIALOGUES.MUIN_QUESTION;
+          addToHistory(currentBubbleText, 'dialogue');
+          setTimeout(() => {
+            buttons.style.display = 'inline-flex';
+          }, 1000);
+        }
+      } else {
+        currentBubbleText = DIALOGUES.POSITIVE_RESPONSE;
+        addToHistory(currentBubbleText, 'dialogue');
+        heartGrowing = true;
+        step = 6;
+      }
+    else if (currentQuestion === 'unknown')
+      if (choice === 'oui') {
+        currentBubbleText = DIALOGUES.SEXY_POSITIVE;
+        addToHistory(currentBubbleText, 'dialogue');
+        heartGrowing = true;
+        step = 6;
+      } else {
+        currentBubbleText = DIALOGUES.SEXY_NEGATIVE;
+        addToHistory(currentBubbleText, 'dialogue');
+        heartBroken = true;
+        step = 6;
+      }
+  }
+
+  // --- GESTION DE LA SAISIE DANS LA ZONE NOIRE ---
+  function onValidate() {
+    const textarea = document.getElementById('chat-input');
+    const text = textarea.value.trim();
+    
+    if (text) {
+      if (step === 4) {
+        userName = text[0].toUpperCase() + text.slice(1).toLowerCase();
+        leftBubbleText = `Je m'appelle ${userName}`;
+        addToHistory(leftBubbleText, 'dialogue');
+        document.getElementById('input-area').style.display = 'none';
+        step = 5;
+        
+        setTimeout(() => {
+          const response = handleSpecialCase(userName);
+          
+          if (response.type === 'direct') {
+            currentBubbleText = response.response;
+            addToHistory(currentBubbleText, 'dialogue');
+            heartGrowing = true;
+            step = 6;
+          } else if (response.type === 'muin' || response.type === 'unknown') {
+            currentQuestion = response.type;
+            currentBubbleText = response.question;
+            addToHistory(currentBubbleText, 'dialogue');
+            setTimeout(() => {
+              document.getElementById('choice-buttons').style.display = 'inline-flex';
+            }, 1000);
+          } else if (response.type === 'valentin') {
+            // Afficher d'abord la première question pour Valentin
+          currentBubbleText = DIALOGUES.VALENTIN_QUESTION;
+          addToHistory(currentBubbleText, 'dialogue');
+          currentQuestion = 'valentin';
+          // Après 2 sec, afficher la deuxième partie
+          setTimeout(() => {
+            currentBubbleText = DIALOGUES.VALENTIN_QUESTION_2;
+            addToHistory(currentBubbleText, 'dialogue');
+            currentQuestion = 'valentin-film';
+            document.getElementById('input-area').style.display = 'block';
+            textarea.value = '';
+            textarea.placeholder = 'Entrez le nom du film...';
+            document.querySelector('#validate-button').textContent = 'Vérifier';
+          }, 2000);
+        }
+        }, 1000);
+      } else if (currentQuestion === 'valentin-film') {
+        if (text.toLowerCase() === 'two lovers') {
+          // 1) Phrase initiale : "Ohhh c'est toi V..."
+            currentBubbleText = DIALOGUES.VALENTIN_N;
+            addToHistory(currentBubbleText, 'dialogue');
+            heartBroken = true; // Le cœur se brise d’abord
+
+            // 2) Au bout de 2 secondes, on affiche "Non je rigole bestfriend..."
+            setTimeout(() => {
+              currentBubbleText = DIALOGUES.VALENTIN_N_JOKE;
+              addToHistory(currentBubbleText, 'dialogue');
+
+              // On annule le "heartBroken" et on lance le "heartGrowing"
+              heartBroken = false;
+              heartGrowing = true;
+            }, 4000);
+        } else {
+          currentBubbleText = DIALOGUES.VALENTIN_G;
+          addToHistory(currentBubbleText, 'dialogue');
+          heartGrowing = true;
+        }
+        document.getElementById('input-area').style.display = 'none';
+        step = 6;
+      }
+    }
+  }
+
+  // --- P5.JS DRAW LOOP ---
+  function draw() {
+    background(255, 209, 220);
+    drawPenguin(pingouin1X, pingouinY, 10);
+    drawPenguin(pingouin2X, pingouinY, 10);
+
+    switch(step) {
+      case 1:
+        movePenguins();
+        if (pingouin1X >= finalPos1 && pingouin2X <= finalPos2) {
+          step = 2;
+          stepTimer = 0;
+          currentBubbleText = DIALOGUES.FIRST_QUESTION;
+          leftBubbleText = currentBubbleText;
+          addToHistory("Le premier pingouin désireux de trouver une valentine demanda à l'autre.", 'narration');
+          addToHistory(currentBubbleText, 'dialogue');
+        }
+        break;
+
+      case 2:
+        drawSpeechBubble(pingouin1X + 140, pingouinY - 90, 220, 60, currentBubbleText);
+        stepTimer++;
+        if (stepTimer > 120) {
+          step = 3;
+          stepTimer = 0;
+          leftBubbleText = currentBubbleText;
+          currentBubbleText = DIALOGUES.SECOND_QUESTION;
+          addToHistory("La deuxième pingouine, surprise et charmée, répondit :", 'narration');
+          addToHistory(currentBubbleText, 'dialogue');
+        }
+        break;
+
+      case 3:
+        drawSpeechBubble(pingouin1X + 140, pingouinY - 90, 220, 60, leftBubbleText);
+        drawSpeechBubble(pingouin2X + 140, pingouinY - 90, 220, 60, currentBubbleText);
+        stepTimer++;
+        if (stepTimer > 120) {
+          step = 4;
+          setTimeout(() => {
+            document.getElementById('input-area').style.display = 'block';
+          }, 2000);
+        }
+        break;
+
+      case 4:
+        drawSpeechBubble(pingouin1X + 140, pingouinY - 90, 220, 60, leftBubbleText);
+        drawSpeechBubble(pingouin2X + 140, pingouinY - 90, 220, 60, currentBubbleText);
+        break;
+
+      case 5:
+        drawSpeechBubble(pingouin1X + 140, pingouinY - 90, 220, 60, leftBubbleText);
+        if (currentBubbleText) {
+          drawSpeechBubble(pingouin2X+ 140, pingouinY - 90, 300, 80, currentBubbleText);
+        }
+        break;
+
+      case 6:
+        drawSpeechBubble(pingouin1X + 140, pingouinY - 90, 220, 60, leftBubbleText);
+        if (currentBubbleText) {
+          drawSpeechBubble(pingouin2X+ 140, pingouinY - 90, 300, 80, currentBubbleText);
+        }
+        
+        if (!heartBroken && heartGrowing) {
+          if (heartSize < 60) {
+            heartSize += 0.4;
+          } else {
+            createConfettis();
+          }
+          if (heartY > 200) {
+            heartY -= 0.3;
+          }
+          textSize(heartSize);
+          text("❤️", heartX, heartY);
+          updateAndDrawConfettis();
+        } else if (heartBroken) {
+          textSize(60);
+          text("💔", heartX, heartY);
+        }
+        break;
+    }
+  }
+
+  function movePenguins() {
+    if (pingouin1X < finalPos1) {
+      pingouin1X += 4;
+    }
+    if (pingouin2X > finalPos2) {
+      pingouin2X -= 2;
+    }
+  }
+
+  function createConfettis() {
+    if (confettis.length > 0) return;
+    for (let i = 0; i < 80; i++) {
+      confettis.push({
+        x: heartX,
+        y: heartY,
+        vx: random(-3, 3),
+        vy: random(-3, 3),
+        c: color(random(255), random(255), random(255))
+      });
+    }
+  }
+
+  function updateAndDrawConfettis() {
+    for (let p of confettis) {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.1;
+      fill(p.c);
+      noStroke();
+      ellipse(p.x, p.y, 6, 6);
+    }
+  }
+
+  // --- Fonction originale pour dessiner le pingouin ---
+  function drawPenguin(x, y, cellSize) {
+    for (let row = 0; row < penguinShapeT.length; row++) {
+      for (let col = 0; col < penguinShapeT[row].length; col++) {
+        const val = penguinShapeT[row][col];
+        if (val === 0) {
+          fill(255, 209, 220);
+        } else if (val === 1) {
+          fill(0);
+        } else if (val === 2) {
+          fill(255);
+        } else if (val === 3) {
+          fill(200);
+        } else if (val === 4) {
+          fill(100);
+        } else if (val === 5) {
+          fill(255, 140, 0);
+        }
+        rect(x + col * cellSize, y + row * cellSize, cellSize, cellSize);
+      }
+    }
+  }
+</script>
+</body>
+</html>

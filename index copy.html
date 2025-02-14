@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Pingouin Pixel Art</title>
+  <!-- Import p5.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <style>
+    /* Pour que le canvas soit centré et la page sans marge. */
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #87CEEB; /* Bleu ciel */
+    }
+  </style>
+</head>
+<body>
+<script>
+  // Tableau décrivant le pingouin :
+  // 0 = fond, 1 = noir, 2 = blanc, 3 = gris clair, 4 = gris foncé, 5 = orange
+  const penguinShapeT = [
+    [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,1, 1,1,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,0,0,0, 1,1,3,3, 3,3,1,1, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,0,0,1, 3,3,4,4, 4,4,3,3, 1,0,0,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,0,1,3, 4,4,4,4, 4,4,4,4, 3,1,0,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,0,1,4, 2,2,4,4, 4,4,2,2, 4,1,0,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,1,4,2, 2,2,2,4, 4,2,2,2, 2,4,1,0, 0,0,0,0, 0,0,0,0],
+    
+    [0,0,0,0, 0,0,0,0, 0,1,4,2, 2,4,2,2, 2,2,4,2, 2,4,1,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,1,4,2, 2,4,2,2, 2,2,4,2, 2,4,1,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,1,4,4, 2,5,5,5, 5,5,5,2, 4,4,1,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,1,4,4, 2,2,5,5, 5,5,2,2, 4,4,1,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 1,4,4,4, 4,2,2,5, 5,2,2,4, 4,4,4,1, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 1,4,4,4, 4,2,2,2, 2,2,2,4, 4,4,4,1, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,1, 3,4,4,4, 2,2,2,2, 2,2,2,2, 4,4,4,3, 1,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,1,3, 4,4,4,2, 2,2,2,2, 2,2,2,2, 2,4,4,4, 3,1,0,0, 0,0,0,0],
+    
+    [0,0,0,0, 0,1,3,4, 4,4,4,2, 2,2,2,2, 2,2,2,2, 2,4,4,4, 4,3,1,0, 0,0,0,0],
+    [0,0,0,0, 1,3,4,4, 4,4,2,2, 2,2,2,2, 2,2,2,2, 2,2,4,4, 4,4,3,1, 0,0,0,0],
+    [0,0,0,1, 3,4,4,4, 4,4,2,2, 2,2,2,2, 2,2,2,2, 2,2,4,4, 4,4,4,3, 1,0,0,0],
+    [0,0,1,3, 4,4,1,4, 4,4,2,2, 2,2,2,2, 2,2,2,2, 2,2,4,4, 4,1,4,4, 3,1,0,0],
+    [0,0,1,4, 4,1,0,1, 4,4,2,2, 2,2,2,2, 2,2,2,2, 2,2,4,4, 1,0,1,4, 4,1,0,0],
+    [0,0,1,4, 1,0,0,1, 4,4,2,2, 2,2,2,2, 2,2,2,2, 2,2,4,4, 1,0,0,1, 4,1,0,0],
+    [0,0,1,1, 0,0,0,1, 4,4,2,2, 2,2,2,2, 2,2,2,2, 2,2,4,4, 1,0,0,0, 1,1,0,0],
+    [0,0,0,0, 0,0,0,1, 4,4,4,2, 2,2,2,2, 2,2,2,2, 2,4,4,4, 1,0,0,0, 0,0,0,0],
+    
+    [0,0,0,0, 0,0,0,0, 1,4,4,2, 2,2,2,2, 2,2,2,2, 2,4,4,1, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 1,4,4,4, 2,2,2,2, 2,2,2,2, 4,4,4,1, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,1,4,4, 4,2,2,2, 2,2,2,4, 4,4,1,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,0,1,4, 4,4,2,2, 2,2,4,4, 4,1,0,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,1,1,4, 4,4,4,4, 4,4,4,4, 4,1,1,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 1,5,5,5, 5,5,4,4, 4,4,5,5, 5,5,5,1, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,1, 5,5,5,5, 5,5,1,1, 1,1,5,5, 5,5,5,5, 1,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,1, 1,1,1,1, 1,1,1,0, 0,1,1,1, 1,1,1,1, 1,0,0,0, 0,0,0,0],
+    
+    [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
+  ];
+
+  let heartOrLightning = ''; // Pour stocker le cœur ou l'éclair
+  let prenomCorrect = 'Pingou'; // Prénom attendu
+
+  function setup() {
+    // Crée un canevas plus grand pour accueillir deux pingouins
+    createCanvas(800, 400);
+    noStroke();
+
+    // Demander le prénom
+    let prenomUtilisateur = prompt('Quel est ton prénom ?');
+
+    // Vérifier la réponse
+    if (prenomUtilisateur === prenomCorrect) {
+      heartOrLightning = '❤️'; // Cœur si correct
+    } else {
+      heartOrLightning = '⚡'; // Éclair si incorrect
+    }
+  }
+
+  function draw() {
+    // Fond (on pourrait mettre un autre bleu si on veut)
+    background(135, 206, 235);
+
+    // Dessin du premier pingouin à gauche
+    drawPenguin(50, 50, 10);
+
+    // Dessin du deuxième pingouin à droite
+    drawPenguin(450, 50, 10);
+
+    // Afficher le cœur ou l'éclair au centre
+    textSize(32);
+    textAlign(CENTER, CENTER);
+    if (heartOrLightning === '❤️') {
+      fill(255, 0, 0); // Rouge pour le cœur
+    } else {
+      fill(255, 255, 0); // Jaune pour l'éclair
+    }
+    text(heartOrLightning, width / 2, height / 2);
+  }
+
+  // Fonction pour dessiner le pingouin
+  function drawPenguin(x, y, cellSize) {
+    for (let row = 0; row < penguinShapeT.length; row++) {
+      for (let col = 0; col < penguinShapeT[row].length; col++) {
+        const val = penguinShapeT[row][col];
+        if (val === 0) {
+          fill(135, 206, 235); // Fond bleu (ou transparent)
+        } else if (val === 1) {
+          fill(0); // Noir
+        } else if (val === 2) {
+          fill(255); // Blanc
+        } else if (val === 3) {
+          fill(200); // Gris clair
+        } else if (val === 4) {
+          fill(100); // Gris foncé
+        } else if (val === 5) {
+          fill(255, 140, 0); // Orange
+        }
+        rect(x + col * cellSize, y + row * cellSize, cellSize, cellSize);
+      }
+    }
+  }
+</script>
+</body>
+</html>
